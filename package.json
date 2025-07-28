@@ -12,6 +12,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@apollo/server": "^4.10.0",
     "@graphql-tools/merge": "^9.0.3",
