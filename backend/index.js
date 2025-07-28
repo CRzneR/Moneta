@@ -17,38 +17,39 @@ import { buildContext } from "graphql-passport";
 import mergedResolvers from "./resolvers/index.js";
 import mergedTypeDefs from "./typeDefs/index.js";
 
-import { connectDB } from "./db/connectDB.js";
 import { configurePassport } from "./passport/passport.config.js";
-
 import job from "./cron.js";
 
 dotenv.config();
 configurePassport();
-
 job.start();
 
 const __dirname = path.resolve();
 const app = express();
-
 const httpServer = http.createServer(app);
 
+// === MONGO SESSION STORE ===
 const MongoDBStore = connectMongo(session);
+const mongoUri = process.env.MONGO_URI;
 
 const store = new MongoDBStore({
-  uri: process.env.MONGO_URI,
+  uri: mongoUri,
   collection: "sessions",
 });
 
-store.on("error", (err) => console.log(err));
+store.on("error", (err) => console.log("❌ Session-Store Fehler:", err));
 
+// === SESSIONS ===
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
-    resave: false, // this option specifies whether to save the session to the store on every request
-    saveUninitialized: false, // option specifies whether to save uninitialized sessions
+    secret: process.env.SESSION_SECRET || "supersecret",
+    resave: false,
+    saveUninitialized: false,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      httpOnly: true, // this option prevents the Cross-Site Scripting (XSS) attacks
+      httpOnly: true,
+      sameSite: "none", // wichtig für Cross-Site Cookies
+      secure: process.env.NODE_ENV === "production", // HTTPS only auf Render
     },
     store: store,
   })
@@ -57,53 +58,47 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// === APOLLO SERVER ===
 const server = new ApolloServer({
   typeDefs: mergedTypeDefs,
   resolvers: mergedResolvers,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
 });
 
-// Ensure we wait for our server to start
 await server.start();
 
-// Set up our Express middleware to handle CORS, body parsing,
-// and our expressMiddleware function.
 app.use(
   "/graphql",
   cors({
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      process.env.CLIENT_URL || "*", // Render-Frontend erlauben
+    ],
     credentials: true,
   }),
   express.json(),
-  // expressMiddleware accepts the same arguments:
-  // an Apollo Server instance and optional configuration options
   expressMiddleware(server, {
     context: async ({ req, res }) => buildContext({ req, res }),
   })
 );
 
-mongoose
-  .connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000, // mehr Zeit für Atlas
-    ssl: true, // TLS erzwingen
-    tlsAllowInvalidCertificates: false, // keine unsicheren Zertifikate
-  })
-  .then(() => {
-    console.log("✅ MongoDB verbunden");
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB Fehler:", err);
-  });
-
-// npm run build will build your frontend app, and it will the optimized version of your app
+// === STATIC FRONTEND ===
 app.use(express.static(path.join(__dirname, "frontend/dist")));
-
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
 });
 
-// Modified server startup
-await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
-await connectDB();
+// === MONGO DB VERBINDUNG ===
+mongoose
+  .connect(mongoUri, {
+    serverSelectionTimeoutMS: 10000,
+    ssl: true,
+  })
+  .then(() => console.log("✅ MongoDB verbunden"))
+  .catch((err) => console.error("❌ MongoDB Fehler:", err));
 
-console.log(`🚀 Server ready at http://localhost:4000/graphql`);
+// === SERVER START ===
+const PORT = process.env.PORT || 4000;
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+});
