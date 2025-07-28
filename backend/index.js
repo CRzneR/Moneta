@@ -6,6 +6,7 @@ import path from "path";
 import passport from "passport";
 import session from "express-session";
 import connectMongo from "connect-mongodb-session";
+import mongoose from "mongoose";
 
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
