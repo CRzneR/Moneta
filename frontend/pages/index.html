@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moneta</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest" defer onload="lucide.createIcons()"></script>
+  </head>
+
+  <body class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <div id="sidebar"></div>
+
+    <!-- Hauptinhalt -->
+    <main class="flex-1 ml-64">
+      <!-- Obere Leiste -->
+      <div class="h-12 bg-gray-600 flex justify-between px-4 text-white space-x-4">
+        <div class="flex items-center justify-center">
+          <p>Monatliche Kosten</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="text-gray-300 hover:text-white cursor-pointer">🔔</div>
+          <p>Name</p>
+          <img
+            src="https://via.placeholder.com/32"
+            alt="Profilbild"
+            class="w-8 h-8 rounded-full border border-gray-400"
+          />
+        </div>
+      </div>
+
+      <!-- Monate -->
+      <div id="monthsContainer" class="flex justify-between text-xl p-6"></div>
+
+      <!-- Dashboard -->
+      <div class="mx-20 mt-12">
+        <!-- Gesamtkostenübersicht -->
+        <!-- fix -->
+        <div class="flex gap-4 pb-4">
+          <div class="flex-1 border border-gray-400 rounded-xl px-6 py-10 bg-[#696969] text-white">
+            <p class="text-3xl"><span class="fixKostenSumme">0.00</span> €</p>
+            <p>Fixkosten</p>
+          </div>
+          <!-- jährlich -->
+          <div class="flex-1 border border-gray-400 rounded-xl px-6 py-10 bg-[#696969] text-white">
+            <p class="text-3xl">
+              <span class="jaehrlicheKostenSumme">0.00</span>
+            </p>
+            <p>Jährliche Kosten</p>
+          </div>
+          <!-- variabel -->
+          <div class="flex-1 border border-gray-400 rounded-xl px-6 py-10 bg-[#696969] text-white">
+            <p class="text-3xl"><span class="variableKostenSumme">0.00</span></p>
+            <p>Variable Kosten</p>
+          </div>
+          <!-- fix -->
+          <div class="flex-1 border border-gray-400 rounded-xl px-6 py-10 bg-[#696969] text-white">
+            <p class="text-3xl"><span class="gesamtSumme">0.00</span> €</p>
+            <p>Gesamtkosten</p>
+          </div>
+        </div>
+
+        <!-- ======  Fixkostenaufstellung ======== -->
+
+        <!-- FIXKOSTEN OVERLAY -->
+        <div
+          id="fixCostOverlay"
+          class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+          <div class="bg-white p-6 rounded-xl shadow-xl w-96">
+            <h2 class="text-lg font-semibold mb-4">Kosten hinzufügen</h2>
+
+            <form id="overlayFixCostForm" class="flex flex-col gap-4">
+              <input
+                id="ovCost"
+                type="number"
+                placeholder="Kosten (€)"
+                class="border px-3 py-2 rounded"
+              />
+
+              <input id="ovName" type="text" placeholder="Name" class="border px-3 py-2 rounded" />
+
+              <select id="ovCategory" class="border px-3 py-2 rounded">
+                <option value="">Kategorie wählen</option>
+                <option value="Wohnen">🏠 Wohnen</option>
+                <option value="Technik">💻 Technik</option>
+                <option value="Versicherung">🛡️ Versicherung</option>
+                <option value="Freizeit">🎧 Freizeit</option>
+                <option value="Gesundheit">💊 Gesundheit</option>
+                <option value="Sonstiges">📦 Sonstiges</option>
+              </select>
+
+              <select id="ovType" class="border px-3 py-2 rounded">
+                <option value="fix">Fixkosten</option>
+                <option value="jährlich">Jährliche Kosten</option>
+                <option value="variabel">Variable Kosten</option>
+              </select>
+
+              <button class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700" type="submit">
+                Speichern
+              </button>
+
+              <button
+                id="closeOverlay"
+                type="button"
+                class="py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Abbrechen
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Bearbeiten/Hinzufügen Buttons -->
+        <div class="flex justify-end mb-4">
+          <div class="flex gap-2">
+            <button
+              class="editFixCostBtn border border-gray-400 rounded-full p-1 hover:bg-gray-100"
+              title="Bearbeiten"
+            >
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button
+              class="addFixCostBtn border border-gray-400 rounded-full p-1 hover:bg-gray-100"
+              title="Hinzufügen"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <form
+          id="newFixCostForm"
+          class="hidden flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg shadow-sm"
+        >
+          <!-- Kosten -->
+          <div class="flex flex-col">
+            <label for="fixCost" class="text-sm font-medium text-gray-700">Kosten (€)</label>
+            <input
+              id="fixCost"
+              type="number"
+              placeholder="z. B. 45"
+              class="border border-gray-300 rounded px-3 py-2 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Name -->
+          <div class="flex flex-col flex-1 min-w-[150px]">
+            <label for="fixName" class="text-sm font-medium text-gray-700">Name</label>
+            <input
+              id="fixName"
+              type="text"
+              placeholder="z. B. Spotify"
+              class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div class="flex flex-col">
+            <label for="fixCategory" class="text-sm font-medium text-gray-700">Kategorie</label>
+            <select
+              id="fixCategory"
+              class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Bitte wählen</option>
+              <option value="Wohnen">🏠 Wohnen</option>
+              <option value="Technik">💻 Technik</option>
+              <option value="Versicherung">🛡️ Versicherung</option>
+              <option value="Freizeit">🎧 Freizeit</option>
+              <option value="Gesundheit">💊 Gesundheit</option>
+              <option value="Sonstiges">📦 Sonstiges</option>
+            </select>
+          </div>
+          <div class="flex flex-col">
+            <label for="fixCostType" class="text-sm font-medium text-gray-700">Art</label>
+            <select
+              id="fixCostType"
+              class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="fix">Fixkosten</option>
+              <option value="jährlich">Jährliche Kosten</option>
+              <option value="variabel">Variable Kosten</option>
+            </select>
+          </div>
+
+          <!-- Button -->
+          <div class="flex items-end">
+            <button
+              id="hinzufuegen"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+              type="submit"
+            >
+              Hinzufügen
+            </button>
+          </div>
+        </form>
+
+        <!-- ============ Fixkosten Formular   =========== -->
+
+        <h2 class="pt-8 text-xl">Monatliche Fixkosten</h2>
+        <!-- ====== Fixkosten Tabelle ======== -->
+        <table id="fixKostenTabelle" class="tbody min-w-full">
+          <thead>
+            <tr class="bg-gray-400">
+              <th class="border px-2 py-1">Kosten (€)</th>
+              <th class="border px-2 py-1">Name</th>
+              <th class="border px-2 py-1">Kategorie</th>
+              <th class="border px-2 py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- neue Zeile  hier einfüpgen -->
+          </tbody>
+        </table>
+        <p class="font-semibold mt-2">Gesamt: <span class="fixKostenSumme">0.00</span> €</p>
+
+        <!-- ====== Jährliche Kosten Tabelle ======== -->
+
+        <h2 class="pt-8 text-xl">Jährliche Kosten</h2>
+        <table id="jaehrlicheKostenTabelle" class="tbody min-w-full">
+          <thead>
+            <tr class="bg-gray-400">
+              <th class="border px-2 py-1">Kosten (€)</th>
+              <th class="border px-2 py-1">Name</th>
+              <th class="border px-2 py-1">Kategorie</th>
+              <th class="border px-2 py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- neue Zeile  hier einfüpgen -->
+          </tbody>
+        </table>
+        <p class="font-semibold mt-2">
+          Gesamt: <span class="jaehrlicheKostenSumme" class="jaehrlicheKostenSumme">0.00</span> €
+        </p>
+
+        <!-- ====== variable Kosten Tabelle ======== -->
+
+        <h2 class="pt-8 text-xl">variable Kosten</h2>
+        <table id="variableKostenTabelle" class="tbody min-w-full">
+          <thead>
+            <tr class="bg-gray-400">
+              <th class="border px-2 py-1">Kosten (€)</th>
+              <th class="border px-2 py-1">Name</th>
+              <th class="border px-2 py-1">Kategorie</th>
+              <th class="border px-2 py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- neue Zeile  hier einfüpgen -->
+          </tbody>
+        </table>
+        <p class="font-semibold mt-2">Gesamt: <span class="variableKostenSumme">0.00</span> €</p>
+      </div>
+    </main>
+
+    <!--  Skript -->
+    <script src="/frontend/js/ui/layout.js"></script>
+    <script src="/frontend/js/ui/fixCost.js"></script>
+    <script type="module" src="/frontend/js/main.js"></script>
+  </body>
+</html>
