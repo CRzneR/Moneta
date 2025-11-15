@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Cost = require("../models/Cost");
+import Cost from "../models/Cost.js";
 
 // GET all costs
 router.get("/", async (req, res) => {
@@ -15,6 +15,7 @@ router.get("/", async (req, res) => {
 // POST new cost
 router.post("/", async (req, res) => {
   const { kosten, name, kategorie, costType } = req.body;
+
   const newCost = new Cost({ kosten, name, kategorie, costType });
 
   try {
@@ -25,7 +26,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE cost by id
+// DELETE cost
 router.delete("/:id", async (req, res) => {
   try {
     const deleted = await Cost.findByIdAndDelete(req.params.id);
@@ -36,4 +37,4 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,13 +1,13 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const CostSchema = new mongoose.Schema(
+const costSchema = new mongoose.Schema(
   {
-    kosten: { type: Number, required: true },
-    name: { type: String, required: true },
-    kategorie: { type: String, required: true },
-    costType: { type: String, enum: ["fix", "jährlich", "variabel"], required: true },
+    kosten: Number,
+    name: String,
+    kategorie: String,
+    costType: String, // fix, jährlich, variabel
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Cost", CostSchema);
+export default mongoose.model("Cost", costSchema);

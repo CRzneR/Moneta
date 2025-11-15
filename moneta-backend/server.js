@@ -17,35 +17,31 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // ==== Middleware ====
-app.use(express.json()); // JSON-Body parsen
-app.use(cors()); // Frontend darf anfragen senden
+app.use(express.json());
+app.use(cors());
 
 // ==== MongoDB Verbindung ====
-const MONGO_URI = process.env.MONGO_URI;
-
 mongoose
-  .connect(MONGO_URI)
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB verbunden"))
   .catch((err) => console.error("❌ MongoDB Fehler:", err));
 
-// ==== API-Routen ====
-app.use("/api/auth", authRoutes); // Login / Register
-app.use("/api/costs", costRoutes); // Kostenverwaltung
-app.use("/api/income", incomeRoutes); // Einnahmenverwaltung
+// ==== API Routes ====
+app.use("/api/auth", authRoutes);
+app.use("/api/costs", costRoutes);
+app.use("/api/income", incomeRoutes);
 
-// ==== Frontend bereitstellen ====
+// ==== STATIC FRONTEND ====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Statisches Frontend ausliefern
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// Catch-all: alle unbekannten Routen → index.html
-app.get("*", (req, res) => {
+// Catch-All nur für das Frontend — NICHT für /api!
+app.get("*", (req, res, next) => {
+  if (req.originalUrl.startsWith("/api")) return next();
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
 // ==== Serverstart ====
-app.listen(PORT, () => {
-  console.log(`🚀 Server läuft auf Port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server läuft auf Port ${PORT}`));
