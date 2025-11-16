@@ -1,9 +1,10 @@
 import express from "express";
 const router = express.Router();
 import Cost from "../models/Cost.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 // GET all costs
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const costs = await Cost.find().sort({ createdAt: -1 });
     res.json(costs);
@@ -13,7 +14,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST new cost
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   const { kosten, name, kategorie, costType } = req.body;
 
   const newCost = new Cost({ kosten, name, kategorie, costType });
@@ -27,7 +28,7 @@ router.post("/", async (req, res) => {
 });
 
 // DELETE cost
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const deleted = await Cost.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Kosten nicht gefunden" });
