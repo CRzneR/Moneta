@@ -6,48 +6,50 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Routen
+// Routen importieren
 import authRoutes from "./routes/auth.js";
 import costRoutes from "./routes/costs.js";
 import incomeRoutes from "./routes/income.js";
 
+// ==== Initialisierung ====
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware
+// ==== Middleware ====
 app.use(express.json());
 app.use(cors());
 
-// MongoDB verbinden
+// ==== MongoDB Verbindung ====
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB verbunden"))
   .catch((err) => console.error("❌ MongoDB Fehler:", err));
 
-// API Routes (MÜSSEN VOR STATIC stehen!)
+// ====== Pfade berechnen ======
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ====== STATIC FILES ======
+
+// 1) frontend als Root verfügbar machen
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+// 2) /pages Ordner separat verfügbar machen
+app.use("/pages", express.static(path.join(__dirname, "../frontend/pages")));
+
+// ====== API ROUTES ======
 app.use("/api/auth", authRoutes);
 app.use("/api/costs", costRoutes);
 app.use("/api/income", incomeRoutes);
 
-// STATIC Frontend
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.join(__dirname, "../frontend")));
-
-// Catch-all NUR für Frontend Routen
-app.get("*", (req, res) => {
-  // Nur wenn die Route NICHT mit /api beginnt
-  if (!req.originalUrl.startsWith("/api")) {
-    return res.sendFile(path.join(__dirname, "../frontend/index.html"));
-  }
-
-  // API-Routen, die nicht existieren → JSON Error statt "Cannot GET"
-  res.status(404).json({ message: "API Route not found" });
+// ====== Catch-all für falsche Routen (aber NICHT API) ======
+app.get("*", (req, res, next) => {
+  if (req.originalUrl.startsWith("/api")) return next();
+  res.sendFile(path.join(__dirname, "../frontend/pages/index.html"));
 });
 
-// Server starten
+// ====== Server Start ======
 app.listen(PORT, () => {
-  console.log(`🚀 Server läuft auf Port ${PORT}`);
+  console.log(`🚀 Server läuft auf http://localhost:${PORT}`);
 });
